@@ -52,9 +52,9 @@ export function VideosPanel({ initialLink = "", initialNovel = null }: { initial
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoId) return toast.error("Paste a YouTube video link first.");
-    if (!novel) return toast.error("Choose which novel this video belongs to.");
-    if (!title.trim()) return toast.error("Please give the video a title.");
+    if (!videoId) { toast.error("Paste a YouTube video link first."); return; }
+    if (!novel) { toast.error("Choose which novel this video belongs to."); return; }
+    if (!title.trim()) { toast.error("Please give the video a title."); return; }
     setBusy(true);
     try {
       await addLibraryVideo({ videoId, novelSlug: novel, title, episode: num(episode), season: num(season), minutes: num(minutes) });

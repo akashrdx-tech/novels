@@ -19,8 +19,8 @@ export function PlaylistsPanel() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     const ytId = link.trim() ? parsePlaylistId(link) : null;
-    if (link.trim() && !ytId) return toast.error("That playlist link doesn't look right.");
-    if (slugs.length === 0) return toast.error("Add at least one novel to the playlist.");
+    if (link.trim() && !ytId) { toast.error("That playlist link doesn't look right."); return; }
+    if (slugs.length === 0) { toast.error("Add at least one novel to the playlist."); return; }
     setBusy(true);
     try {
       await addLibraryPlaylist({ title, youtubePlaylistId: ytId, novelSlugs: slugs });

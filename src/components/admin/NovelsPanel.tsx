@@ -24,7 +24,7 @@ export function NovelsPanel({ onAdded }: { onAdded?: (slug: string) => void }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     const playlistId = playlist.trim() ? parsePlaylistId(playlist) : null;
-    if (playlist.trim() && !playlistId) return toast.error("That playlist link doesn't look right.");
+    if (playlist.trim() && !playlistId) { toast.error("That playlist link doesn't look right."); return; }
     setBusy(true);
     try {
       const slug = uniqueSlug(name, (s) => Boolean(lib.getNovel(s)) || extras.novels.some((n) => n.slug === s));
