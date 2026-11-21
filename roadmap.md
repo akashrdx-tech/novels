@@ -16,7 +16,7 @@
 - [ ] Admin page for PDF upload — blocked: waiting for owner's admin email
 - [ ] Installable app (PWA) with offline support (published site only), incl. offline reading of opened PDFs
 - [ ] Bring over existing reviews, feedback, counts and PDF files from the original project — waiting on the owner's data export
-- [ ] Make the owner's account admin once they sign up on /auth (owner didn't share an email)
+- [x] Owner admin login "adminnadia" created with admin rights
 - [x] Copy project from GitHub (kind-companion) into this project with its own Lovable Cloud
 - [ ] Bring over old reviews, feedback, counts and PDFs — waiting on the owner's data export
 - [x] Kutab Nagri PDFs: declined to download/re-host (authors' copyright); owner uploads PDFs he has rights to
@@ -29,8 +29,9 @@
 - [ ] Welcome voice starts together with the opening book animation
 - [ ] Works on Vercel (media files, PDF links, no private server key needed)
 - [ ] Add newest YouTube uploads to the library
-- [ ] Admin portal: add novels, videos (by link, with preview), playlists; YouTube "new uploads" list
+- [ ] Admin portal: add novels, videos (by link, with preview), playlists; YouTube "new uploads" list (in progress)
 - [x] Copy project from GitHub (hello-there) into this project with its own Lovable Cloud
 - [ ] Bring over reviews, feedback, counts and PDFs from the hello-there project — waiting on the owner's data export
 - [x] Copy project from GitHub (a-warm-hello) into this project with its own Lovable Cloud
 - [ ] Bring over reviews, feedback, counts and PDFs from the a-warm-hello project — waiting on the owner's data export
+- [ ] Check in the browser: new novel "Flowers Scattered Along the Path", Latest order, welcome voice with book animation, sign-in links

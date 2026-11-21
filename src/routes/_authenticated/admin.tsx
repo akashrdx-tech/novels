@@ -1,20 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
+import { NovelsPanel } from "@/components/admin/NovelsPanel";
+import { PdfPanel } from "@/components/admin/PdfPanel";
+import { PlaylistsPanel } from "@/components/admin/PlaylistsPanel";
+import { UploadsPanel } from "@/components/admin/UploadsPanel";
+import { VideosPanel } from "@/components/admin/VideosPanel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { adminPdfListQuery, isAdminQuery, removeNovelPdf, uploadNovelPdf } from "@/lib/admin";
-import { byViews, searchNovels } from "@/lib/catalog";
+import { isAdminQuery } from "@/lib/admin";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
-      { title: "Owner Area — Novels Forever" },
-      { name: "description", content: "Upload and manage novel PDFs on Novels Forever." },
-      { property: "og:title", content: "Owner Area — Novels Forever" },
-      { property: "og:description", content: "Manage novel PDFs." },
+      { title: "Admin Portal — Novels Forever" },
+      { name: "description", content: "Add novels, videos, playlists and PDFs to Novels Forever." },
+      { property: "og:title", content: "Admin Portal — Novels Forever" },
+      { property: "og:description", content: "Owner area for managing the Novels Forever library." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -23,16 +26,16 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
+const displayName = (email: string | undefined) =>
+  email?.endsWith("@novelsforever.app") ? email.split("@")[0] : email;
+
 function AdminPage() {
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: isAdmin, isLoading } = useQuery(isAdminQuery(user.id));
-  const { data: pdfs } = useQuery({ ...adminPdfListQuery(), enabled: isAdmin === true });
-  const [q, setQ] = useState("");
-  const [busySlug, setBusySlug] = useState<string | null>(null);
-  const list = searchNovels(q, byViews).slice(0, 30);
-  const pdfMap = new Map((pdfs ?? []).map((p) => [p.novel_slug, p]));
+  const [tab, setTab] = useState("uploads");
+  const [videoPrefill, setVideoPrefill] = useState<{ link: string; novel: string | null; n: number }>({ link: "", novel: null, n: 0 });
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -41,40 +44,18 @@ function AdminPage() {
     void navigate({ to: "/auth", replace: true });
   };
 
-  const upload = async (slug: string, file: File | undefined) => {
-    if (!file) return;
-    setBusySlug(slug);
-    try {
-      await uploadNovelPdf(slug, file);
-      toast.success("PDF uploaded.");
-      await qc.invalidateQueries({ queryKey: ["novel-pdf"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setBusySlug(null);
-    }
-  };
-
-  const remove = async (slug: string, path: string) => {
-    setBusySlug(slug);
-    try {
-      await removeNovelPdf(slug, path);
-      toast.success("PDF removed.");
-      await qc.invalidateQueries({ queryKey: ["novel-pdf"] });
-    } catch {
-      toast.error("Could not remove the PDF.");
-    } finally {
-      setBusySlug(null);
-    }
+  const openVideo = (link: string, novel: string | null) => {
+    setVideoPrefill((p) => ({ link, novel, n: p.n + 1 }));
+    setTab("videos");
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-primary/80">Owner area</p>
-          <h1 className="mt-1 font-display text-4xl font-semibold">PDF uploads</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Signed in as {user.email}</p>
+          <h1 className="mt-1 font-display text-4xl font-semibold">Admin portal</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Signed in as {displayName(user.email)}</p>
         </div>
         <Button variant="glass" onClick={() => void signOut()}>Sign out</Button>
       </div>
@@ -85,31 +66,30 @@ function AdminPage() {
           This account is not an admin yet. Ask for admin access to be given to {user.email}.
         </p>
       ) : (
-        <>
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search novel…" aria-label="Search novel" className="mt-8 h-11" />
-          <ul className="mt-6 space-y-3">
-            {list.map((n) => {
-              const pdf = pdfMap.get(n.slug);
-              return (
-                <li key={n.slug} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4">
-                  <span className="min-w-0">
-                    <span className="block font-medium">{n.name}</span>
-                    <span className="block text-xs text-muted-foreground">{pdf ? "PDF uploaded" : "No PDF yet"}{n.author ? ` · ${n.author}` : ""}</span>
-                  </span>
-                  <span className="flex gap-2">
-                    <label className="cursor-pointer rounded-md bg-gold px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-                      {busySlug === n.slug ? "Working…" : pdf ? "Replace PDF" : "Upload PDF"}
-                      <input type="file" accept="application/pdf" className="sr-only" disabled={busySlug !== null} onChange={(e) => void upload(n.slug, e.target.files?.[0])} />
-                    </label>
-                    {pdf && (
-                      <Button size="sm" variant="glass" disabled={busySlug !== null} onClick={() => void remove(n.slug, pdf.file_path)}>Remove</Button>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </>
+        <Tabs value={tab} onValueChange={setTab} className="mt-8">
+          <TabsList className="flex h-auto flex-wrap justify-start">
+            <TabsTrigger value="uploads">New on YouTube</TabsTrigger>
+            <TabsTrigger value="novels">Novels</TabsTrigger>
+            <TabsTrigger value="videos">Videos</TabsTrigger>
+            <TabsTrigger value="playlists">Playlists</TabsTrigger>
+            <TabsTrigger value="pdfs">PDFs</TabsTrigger>
+          </TabsList>
+          <TabsContent value="uploads" className="mt-6">
+            <UploadsPanel onAdd={(id) => openVideo(`https://www.youtube.com/watch?v=${id}`, null)} />
+          </TabsContent>
+          <TabsContent value="novels" className="mt-6">
+            <NovelsPanel onAdded={(slug) => openVideo("", slug)} />
+          </TabsContent>
+          <TabsContent value="videos" className="mt-6">
+            <VideosPanel key={videoPrefill.n} initialLink={videoPrefill.link} initialNovel={videoPrefill.novel} />
+          </TabsContent>
+          <TabsContent value="playlists" className="mt-6">
+            <PlaylistsPanel />
+          </TabsContent>
+          <TabsContent value="pdfs" className="mt-6">
+            <PdfPanel />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
